@@ -1,2 +1,5 @@
 wget -r -p -np -k
-支持socks5代理选择
+
+scrapy crawl testLinkExtractor -a url='' -a location=''
+url是你要遍历的url
+location是你要存的地址
