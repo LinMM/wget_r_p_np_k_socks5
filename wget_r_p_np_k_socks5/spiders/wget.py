@@ -67,32 +67,19 @@ class testLinkExtractorSpider(CrawlSpider):
                     #保存，修改链接
                     self._save(response)
                     
-                    #self._parserHTML(response)的内容    #处理页面上的链接，返回下一轮请求
-                    f=open(self.url_file[response.url],'r')
-                    _htmlBody=f.read()
-                    f.close()
+                    return self._parseHTML(response)
                     
-                    for link in self.linkExtractor.extract_links(response):
-                        if(self.url_file.has_key(link.url)):
-                            _htmlBody=self._setRelativeLink(_htmlBody, response.url, link.url)
-                        elif(self._getDomain(link.url)==self.domain):
-                            self.log('lingk"'+link.url)
-                            yield Request(link.url)
-                            
-                    
-                    
-                    f=open(self.url_file[response.url],'w')
-                    f.write(_htmlBody)
-                    f.close()
-                    #self._parserHTML(response)的内容 end
-                    
-            #资源页面
-            elif(None!=re.search(self.pattern_css+'|'+self.pattern_image+'|'+self.pattern_javascript+'|'+self.pattern_plain,content_type)):
+            #文本资源页面
+            elif(None!=re.search(self.pattern_css+'|'+self.pattern_javascript+'|'+self.pattern_plain,content_type)):
                 #保存，修改链接
                 self._save(response)
+            #图片资源
+            elif(None != re.search(self.pattern_image,content_type)):
+                #保存，修改链接
+                self._save(response, 'wb')
     
     #保存数据
-    def _save(self,response):
+    def _save(self,response,writeflag='w'):
         #文件前缀+path
         name=self._getPath(response.url)
         if(os.path.basename(name)==''):
@@ -104,7 +91,7 @@ class testLinkExtractorSpider(CrawlSpider):
         #生成文件目录
         self._mkdir(fileName)
         #写入文件
-        f=open(fileName,'w')
+        f=open(fileName,writeflag)
         f.write(response.body)
         f.close()
         #修改referer上的相对链接
@@ -137,6 +124,22 @@ class testLinkExtractorSpider(CrawlSpider):
             f=open(fileName,"r")
             self.htmlBody=f.read()
             f.close()
+    
+    def _parseHTML(self,response):
+        f=open(self.url_file[response.url],'r')
+        _htmlBody=f.read()
+        f.close()
+        
+        for link in self.linkExtractor.extract_links(response):
+            if(self.url_file.has_key(link.url)):
+                _htmlBody=self._setRelativeLink(_htmlBody, response.url, link.url)
+            elif(self._getDomain(link.url)==self.domain):
+                self.log('lingk"'+link.url)
+                yield Request(link.url)
+                        
+        f=open(self.url_file[response.url],'w')
+        f.write(_htmlBody)
+        f.close()
     
     #获取url path
     def _getPath(self,url):
